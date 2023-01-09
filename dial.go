@@ -38,13 +38,15 @@ func Dial(addr string, tlsConfig *tls.Config) (net.Conn, error) {
 		return nil, err
 	}
 
-	sendStream, err := quicSession.OpenStream()
+	iStream, err := quicSession.OpenStream()
+	dStream, err := quicSession.OpenStream()
 	if err != nil {
 		return nil, err
 	}
 
 	return &conn{
 		session:    quicSession,
-		sendStream: sendStream,
+		infoStream: iStream,
+		dataStream: dStream,
 	}, nil
 }

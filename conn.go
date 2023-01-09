@@ -9,43 +9,49 @@ import (
 )
 
 type conn struct {
-	session quic.Session
-
-	receiveStream quic.Stream
-	sendStream    quic.Stream
+	session    quic.Session
+	infoStream quic.Stream
+	dataStream quic.Stream
 }
 
 func newConn(sess quic.Session) (*conn, error) {
-	stream, err := sess.OpenStream()
+	istream, err := sess.OpenStream()
+	dstream, err := sess.OpenStream()
 	if err != nil {
 		return nil, err
 	}
 	return &conn{
 		session:    sess,
-		sendStream: stream,
+		infoStream: istream,
+		dataStream: dstream,
 	}, nil
 }
 
+func (c *conn) DataStream() quic.Stream {
+	return c.dataStream
+}
 func (c *conn) Read(b []byte) (int, error) {
-	if c.receiveStream == nil {
+
+	if c.dataStream == nil {
 		var err error
-		c.receiveStream, err = c.session.AcceptStream(context.Background())
+		c.dataStream, err = c.session.AcceptStream(context.Background())
 		// TODO: check stream id
 		if err != nil {
 			return 0, err
 		}
 		// quic.Stream.Close() closes the stream for writing
-		err = c.receiveStream.Close()
-		if err != nil {
-			return 0, err
-		}
+		//err = c.dataStream.Close()
+		//if err != nil {
+		//	return 0, err
+		//}
 	}
 
-	return c.receiveStream.Read(b)
+	return c.dataStream.Read(b)
+	//return io.ReadFull(c.dataStream,b)
 }
 
 func (c *conn) Write(b []byte) (int, error) {
-	return c.sendStream.Write(b)
+	return c.dataStream.Write(b)
 }
 
 // LocalAddr returns the local network address.
