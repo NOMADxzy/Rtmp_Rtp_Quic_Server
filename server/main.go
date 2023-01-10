@@ -15,33 +15,42 @@ import (
 	"time"
 )
 
-func main() {
+func initialQUIC() *conn {
+	tlsConf, err := generateTLSConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	ln, err := quic.ListenAddr("localhost:4242", tlsConf, nil)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Waiting for incoming connection")
+	protoconn, err := ln.Accept(context.Background())
+
+	conn, _ := newConn(protoconn, true)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Established connection")
+	return conn
+}
+
+var rtp_queue = newQueue(5000)
+var CUR_SEQ = uint16(4171)
+
+func main_() {
 	// start the server
 	go func() {
-		tlsConf, err := generateTLSConfig()
-		if err != nil {
-			panic(err)
-		}
-
-		ln, err := quic.ListenAddr("localhost:4242", tlsConf, nil)
-
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Waiting for incoming connection")
-		protoconn, err := ln.Accept(context.Background())
-
-		conn, _ := newConn(protoconn, true)
-
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("Established connection")
 
 		var seq uint16
 
-		_, err = conn.ReadSeq(&seq)
+		conn := initialQUIC()
+
+		_, err := conn.ReadSeq(&seq)
 		if err != nil {
 			panic(err)
 		}
@@ -53,7 +62,7 @@ func main() {
 		//发送rtp数据包给客户
 
 		//rtp := []byte("Rtp data...")
-		payload := make([]byte, 16)
+		payload := make([]byte, 160)
 		for i := range payload {
 			payload[i] = byte(i)
 		}

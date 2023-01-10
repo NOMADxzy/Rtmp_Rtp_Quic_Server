@@ -19,25 +19,33 @@ func main() {
 			panic(err)
 		}
 		conn, _ := newConn(protoconn, false)
+		var seq int
 
-		seq := 6261
+		for {
+			//获取序列号
+			fmt.Print("序列号：")
+			_, err = fmt.Scan(&seq)
+			if err != nil {
+				panic(err)
+			}
+			// 根据序列号请求
+			_, err = conn.WriteSeq(uint16(seq))
 
-		// 根据序列号请求
-		_, err = conn.WriteSeq(uint16(seq))
-
-		//读rtp数据
-		pkt := RTPPacket{}
-		_, err = conn.ReadRtp(&pkt)
-		if err != nil {
-			fmt.Println(err)
+			//读rtp数据
+			pkt := RTPPacket{}
+			_, err = conn.ReadRtp(&pkt)
+			if err != nil {
+				fmt.Println(err)
+			}
+			//fmt.Printf("buf:\t %v \n", pkt.buffer)
+			//fmt.Printf("ekt:\t %v \n", pkt.ekt)
+			fmt.Printf("Seq:\t %v \n", pkt.GetSeq())
+			fmt.Printf("SSRC:\t %v \n", pkt.GetSSRC())
+			fmt.Printf("ExtLen:\t %v \n", pkt.GetHdrExtLen())
+			fmt.Printf("PTtype:\t %v \n", pkt.GetPT())
+			fmt.Printf("Payload:\t %v \n", pkt.GetPayload())
 		}
-		fmt.Printf("buf:\t %v \n", pkt.buffer)
-		fmt.Printf("ekt:\t %v \n", pkt.ekt)
-		fmt.Printf("Seq:\t %v \n", pkt.GetSeq())
-		fmt.Printf("SSRC:\t %v \n", pkt.GetSSRC())
-		fmt.Printf("ExtLen:\t %v \n", pkt.GetHdrExtLen())
-		fmt.Printf("PTtype:\t %v \n", pkt.GetPT())
-		fmt.Printf("Payload:\t %v \n", pkt.GetPayload())
+
 		//_, err = conn.Write(message)
 
 		//fmt.Println("message len: ", prefix)
